@@ -12,10 +12,9 @@ module blake (
     wire [6:0]    counter_idx;
     wire          ctrl_finalize;
     wire          round_ing;
-    wire [1023:0] state_buf;
-    wire          clr_all;   
+    wire [1023:0] state_buf;  
 
-    // --- 1. input processing (capture & bswap32) ---
+    // --- 1. input processing ---
     wire [639:0] din_swapped;
     genvar i;
     generate
@@ -38,8 +37,7 @@ module blake (
         .ctrl_finalize (ctrl_finalize),
         .counter_idx     (counter_idx),
         .init_round    (init_round),
-        .round_ing     (round_ing),
-        .clr_all        (clr_all)
+        .round_ing     (round_ing)
     );
 
     // --- 3. Datapath Module ---
@@ -51,7 +49,6 @@ module blake (
         .counter_idx     (counter_idx),
         .ctrl_finalize (ctrl_finalize),
         .round_ing     (round_ing),
-        .clr_all       (clr_all),
         .rdy            (rdy),
         .dout          (dout)
     );
