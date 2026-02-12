@@ -8,9 +8,8 @@ module blake_datapath (
     input  wire [6:0] counter_idx,
     input  wire ctrl_finalize,
     input  wire round_ing,
-    input wire clr_all,
-    output wire rdy,
-    output wire [511:0] dout
+    output reg rdy,           
+    output reg [511:0] dout     
 );
 
     wire [63:0] IV [0:7];
@@ -71,7 +70,7 @@ module blake_datapath (
         v_init_val[63:0]    = cb[7];
     end
 
-    // sigma table
+    // sigma table (MUX)
     always @(*) begin
         case (counter_idx[6:3]) 
             4'd0, 4'd10: sigma_row = 64'h0123456789ABCDEF;
@@ -100,7 +99,7 @@ module blake_datapath (
                 msg[i] <= 64'd0;
             end
         end
-        else if (clr_all) begin
+        else if (ctrl_finalize) begin
             for (i =0; i<16; i = i+1) begin
                 msg[i] <= 64'd0;
             end
@@ -121,7 +120,7 @@ module blake_datapath (
             msg[13] <= state_buf[191:128];
             msg[14] <= state_buf[127:64];
             msg[15] <= state_buf[63:0];
-        end    
+        end 
     end
 
 
@@ -129,9 +128,6 @@ module blake_datapath (
     always @(posedge clk or negedge rstb) begin
         if (!rstb) begin
             state <= 1024'd0;
-        end
-        else if (clr_all) begin 
-        state <= 1024'd0;
         end
         else if (init_round) begin   //initial
             state <= v_init_val;
@@ -189,7 +185,7 @@ module blake_datapath (
     );
 
     always @(*) begin
-        v_state = state; //나머지 bit 유지
+        v_state = state; 
         case (step)
             3'd0: begin v_state[1023:960]=a_out; v_state[767:704]=b_out; v_state[511:448]=c_out; v_state[255:192]=d_out; end
             3'd1: begin v_state[959:896]=a_out;  v_state[703:640]=b_out; v_state[447:384]=c_out; v_state[191:128]=d_out; end
@@ -204,7 +200,6 @@ module blake_datapath (
     end
     
 
-
     // -------------------------------------------------------------------------
     // 5. output_comb
     // -------------------------------------------------------------------------
@@ -214,7 +209,7 @@ module blake_datapath (
     genvar k;
     generate
         for(k=0; k<16; k=k+1) begin 
-            assign v_final[k] = v_state[((15-k) << 6) +: 64]; //state -> v_state
+            assign v_final[k] = v_state[((15-k) << 6) +: 64]; 
         end
     endgenerate
 
@@ -222,28 +217,72 @@ module blake_datapath (
     // h finalize
     reg [63:0] h [0:7];
 
+    // 1) Sequential Logic
     integer j;
     always @(posedge clk or negedge rstb) begin
         if (!rstb) begin
             for(j=0; j<8; j=j+1) h[j] <= IV[j];
+            rdy  <= 1'b0;
+            dout <= 512'd0;
         end 
+        else if (init_round) begin
+            for(j=0; j<8; j=j+1) 
+            h[j] <= IV[j];
+            rdy  <= 1'b0;
+            dout <= 512'd0;
+        end
+        else if (round_ing) begin
+            for(j=0; j<8; j=j+1) h[j] <= IV[j];
+            rdy  <= 1'b0;
+            dout <= 512'd0;
+        end
+        else if (ctrl_finalize) begin
+            rdy  <= 1'b1;
+            dout <= {       
+                h[0] ^ v_final[0] ^ v_final[8],
+                h[1] ^ v_final[1] ^ v_final[9],
+                h[2] ^ v_final[2] ^ v_final[10],
+                h[3] ^ v_final[3] ^ v_final[11],
+                h[4] ^ v_final[4] ^ v_final[12],
+                h[5] ^ v_final[5] ^ v_final[13],
+                h[6] ^ v_final[6] ^ v_final[14],
+                h[7] ^ v_final[7] ^ v_final[15] };
+        end
+        else begin
+            rdy <= 1'b0;
+        end
+    end 
+
+    // 2) combinational logic
+    /*integer j;
+    always @(posedge clk or negedge rstb) begin
+        if (!rstb) begin
+            for(j=0; j<8; j=j+1) h[j] <= IV[j];
+        end 
+        //else if (clr_all) begin
+        //    for(j=0; j<8; j=j+1) h[j] <= 64'd0; 
+        //end
         else if (init_round) begin
             for(j=0; j<8; j=j+1) h[j] <= IV[j]; 
         end
+        else if (round_ing) begin
+            for(j=0; j<8; j=j+1) h[j] <= h[j];
+        end
         else if (ctrl_finalize) begin
-                h[0] <= h[0] ^ v_final[0] ^ v_final[8];
-                h[1] <= h[1] ^ v_final[1] ^ v_final[9];
-                h[2] <= h[2] ^ v_final[2] ^ v_final[10];
-                h[3] <= h[3] ^ v_final[3] ^ v_final[11];
-                h[4] <= h[4] ^ v_final[4] ^ v_final[12];
-                h[5] <= h[5] ^ v_final[5] ^ v_final[13];
-                h[6] <= h[6] ^ v_final[6] ^ v_final[14];
-                h[7] <= h[7] ^ v_final[7] ^ v_final[15];
+            h[0] <= h[0] ^ v_final[0] ^ v_final[8];
+            h[1] <= h[1] ^ v_final[1] ^ v_final[9];
+            h[2] <= h[2] ^ v_final[2] ^ v_final[10];
+            h[3] <= h[3] ^ v_final[3] ^ v_final[11];
+            h[4] <= h[4] ^ v_final[4] ^ v_final[12];
+            h[5] <= h[5] ^ v_final[5] ^ v_final[13];
+            h[6] <= h[6] ^ v_final[6] ^ v_final[14];
+            h[7] <= h[7] ^ v_final[7] ^ v_final[15];
         end
     end
 
-    assign rdy = ctrl_finalize;
-    assign dout = rdy ?  {
+    //assign rdy = (counter_idx == 7'd127) ?  1'b1 : 1'b0;
+    assign rdy = (ctrl_finalize);
+    assign dout = (rdy) ? {
         h[0] ^ v_final[0] ^ v_final[8],
         h[1] ^ v_final[1] ^ v_final[9],
         h[2] ^ v_final[2] ^ v_final[10],
@@ -252,7 +291,7 @@ module blake_datapath (
         h[5] ^ v_final[5] ^ v_final[13],
         h[6] ^ v_final[6] ^ v_final[14],
         h[7] ^ v_final[7] ^ v_final[15] 
-        } : 512'd0;
+    } : 512'd0; */
 
     
 endmodule
