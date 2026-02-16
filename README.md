@@ -35,3 +35,4 @@
   -   **version 1**: When the finalization stage in the `datapath.v` is implemented sequentially, the total latency becomes 129 cycles.
                     If implemented combinationally, it completes in 128 cycles. However, due to a race condition with the testbench, a hash failure occurs; adding a delay to the output comparison in `tb.v` resolves                      this and the hash completes correctly.
   -   **version 2**: The Structure was modularized, with the controller and counter implemented as separate modules, and FSM signals provided accordingly, reducing the number of control signals.
+      ![diagram](blake.png)
