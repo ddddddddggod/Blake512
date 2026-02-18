@@ -27,7 +27,7 @@ module blake_finalize (
     assign v[14] = v_state_next[127:64];   assign v[15] = v_state_next[63:0];
 
     // ---------------------------------------------------------
-    // 2. (Sequential)
+    // 1. Sequential_129cycle
     // ---------------------------------------------------------
     reg [63:0] h [0:7];
 
@@ -55,5 +55,28 @@ module blake_finalize (
             dout <= 512'd0;
         end
     end
+    // ---------------------------------------------------------
+    // 2. Combinational_128cycle
+    // ---------------------------------------------------------
+    /*reg [63:0] h [0:7];
 
+    integer j;
+    always @(posedge clk or negedge rstb) begin
+        if (!rstb || init_round) begin
+            for (j=0; j<8; j=j+1) 
+            h[j] <= IV[j];
+        end
+    end
+
+    assign rdy = (count_done);
+    assign dout = (rdy) ? {
+                      h[0] ^ v[0] ^ v[8],
+                      h[1] ^ v[1] ^ v[9],
+                      h[2] ^ v[2] ^ v[10],
+                      h[3] ^ v[3] ^ v[11],
+                      h[4] ^ v[4] ^ v[12],
+                      h[5] ^ v[5] ^ v[13],
+                      h[6] ^ v[6] ^ v[14],
+                      h[7] ^ v[7] ^ v[15]
+    } : 512'd0;*/
 endmodule
