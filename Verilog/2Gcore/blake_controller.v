@@ -15,22 +15,8 @@ module blake_controller (
     always @(*) begin
         state_n = state; 
         case (state)
-            st_idle: begin
-                if (ena) begin
-                    state_n = st_running;
-                end
-                else begin
-                    state_n = st_idle;
-                end
-            end
-            st_running: begin
-                if (count_done && !ena) begin
-                    state_n = st_idle;
-                end
-                else begin
-                    state_n = st_running;
-                end
-            end
+            st_idle: assign state_n = (ena) ? st_running : st_idle;
+            st_running: assign state_n = (count_done) ? st_idle : st_running;
         endcase
     end
 
