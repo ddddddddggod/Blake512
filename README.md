@@ -37,3 +37,7 @@
   -   **version 2**: The Structure was modularized, with the controller and counter implemented as separate modules, and FSM signals provided accordingly, reducing the number of control signals.
   -   **version 3**: The FSM signals were simplified. Only a single variable was used for the MUX.
       ![diagram](Verilog/1Gcore/version2/blake.png)
+- ### 2Gcore :
+  The input is received every 64 cycles. The output `dout` is produced 128 cycles after the input is received.
+  -  **Hardware Duplication** : A parallel architecture with two GB functions is used. This reduces the overall latency.
+  -  **Pipelined Structure** : The blake128 modules are connected in series and organized into a pipelined architecture by dividing the count into two stages (0–63 and 64–128).
