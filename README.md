@@ -41,4 +41,5 @@
   The input is received every 64 cycles. The output `dout` is produced 128 cycles after the input is received.
   A parameterized sequential logic design is used to implement registers with the `blake_rbit` module.
   -  **Hardware Duplication** : A parallel architecture with two GB functions is used. This reduces the overall latency. Although the computation itself completes in 64 cycles, the `rdy` signal is delayed to 128 cycles using a shift register.
+     ![diagram](Verilog/2Gcore/Hardware Duplication/blake_2Gcore.png)
   -  **Pipelined Structure** : The blake128 modules are connected in series and organized into a pipelined architecture by dividing the count into two stages (0–63 and 64–128).
